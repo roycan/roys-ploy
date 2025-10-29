@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Roy's Ploy - A strengths-driven companion for sustainable long-term projects">
+    <title>Dashboard - Roy's Ploy</title>
+    
+    <!-- Bulma CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="./styles/main.css">
+    <link rel="stylesheet" href="./styles/mobile.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Dashboard content will be rendered here by dashboard.js -->
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="bottom-nav-item" data-page="dashboard">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="garden.html" class="bottom-nav-item" data-page="garden">
+            <i class="fas fa-lightbulb"></i>
+            <span>Garden</span>
+        </a>
+        <a href="log.html" class="bottom-nav-item" data-page="log">
+            <i class="fas fa-book"></i>
+            <span>Log</span>
+        </a>
+        <a href="settings.html" class="bottom-nav-item" data-page="settings">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+        </a>
+    </nav>
+
+    <!-- Floating Action Button -->
+    <button id="fab" class="fab" title="Create new project">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Modal Container -->
+    <div id="modal-root"></div>
+
+    <!-- Scripts (in dependency order) -->
+    <script src="./scripts/shared/utils.js"></script>
+    <script src="./scripts/shared/storage.js"></script>
+    <script src="./scripts/shared/models.js"></script>
+    <script src="./scripts/shared/nav.js"></script>
+    <script src="./scripts/pages/dashboard.js"></script>
+</body>
+</html>

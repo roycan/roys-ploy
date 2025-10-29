@@ -1,0 +1,82 @@
+/* Mobile-specific refinements */
+
+@media (max-width: 768px) {
+    /* Ensure tap targets are at least 44px */
+    button,
+    a,
+    .button,
+    .bottom-nav-item {
+        min-width: 44px;
+        min-height: 44px;
+    }
+    
+    /* Larger form inputs on mobile */
+    input,
+    textarea,
+    select {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Project cards optimized for mobile */
+    .project-card {
+        padding: 1.25rem;
+    }
+    
+    .project-card-title {
+        font-size: 1.1rem;
+    }
+    
+    /* Modal adjustments */
+    .modal-content {
+        padding: 1.5rem;
+        max-height: 85vh;
+    }
+    
+    /* Stack buttons on mobile */
+    .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .button-group .button {
+        width: 100%;
+    }
+    
+    /* Hide desktop-only elements */
+    .desktop-only {
+        display: none !important;
+    }
+}
+
+/* Landscape mobile adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+    .modal-content {
+        max-height: 70vh;
+    }
+    
+    .welcome-screen {
+        padding: 2rem 1rem;
+    }
+}
+
+/* Small phones */
+@media (max-width: 375px) {
+    #app {
+        padding: 0.75rem;
+    }
+    
+    .project-card {
+        padding: 1rem;
+    }
+    
+    .bottom-nav-item span {
+        font-size: 0.65rem;
+    }
+    
+    .fab {
+        width: 48px;
+        height: 48px;
+        font-size: 1.25rem;
+    }
+}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Roy's Ploy - A strengths-driven companion for sustainable long-term projects">
+    <title>Roy's Ploy</title>
+    
+    <!-- Bulma CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="./styles/main.css">
+    <link rel="stylesheet" href="./styles/mobile.css">
+</head>
+<body>
+    <div id="app">
+        <!-- App content will be rendered here -->
+        <div class="loading-screen">
+            <div class="has-text-centered">
+                <p class="title">Roy's Ploy</p>
+                <p class="subtitle">Loading your projects...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <nav id="bottom-nav" class="bottom-nav" style="display: none;">
+        <a href="#/dashboard" class="bottom-nav-item" data-route="dashboard">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="#/garden" class="bottom-nav-item" data-route="garden">
+            <i class="fas fa-lightbulb"></i>
+            <span>Garden</span>
+        </a>
+        <a href="#/log" class="bottom-nav-item" data-route="log">
+            <i class="fas fa-book"></i>
+            <span>Log</span>
+        </a>
+        <a href="#/settings" class="bottom-nav-item" data-route="settings">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+        </a>
+    </nav>
+
+    <!-- Floating Action Button -->
+    <button id="fab" class="fab" style="display: none;" title="Quick action">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Modal Container -->
+    <div id="modal-root"></div>
+
+    <!-- App Script (ES Module) -->
+    <script type="module" src="./scripts/app.js"></script>
+</body>
+</html>
