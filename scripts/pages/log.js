@@ -176,11 +176,8 @@
                 const logId = btn.getAttribute('data-delete-log');
                 if (confirm('Delete this learning entry? This cannot be undone.')) {
                     const state = Storage.loadState();
-                    const updatedLogs = Models.deleteLog(state, logId);
-                    Storage.saveState({
-                        ...state,
-                        logs: updatedLogs
-                    });
+                    const updatedState = Models.deleteLog(state, logId);
+                    Storage.saveState(updatedState);
                     Utils.showToast('Learning entry deleted');
                     renderLogPage();
                 }

@@ -219,11 +219,8 @@
                 const ideaId = btn.getAttribute('data-delete-idea');
                 if (confirm('Delete this idea? This cannot be undone.')) {
                     const state = Storage.loadState();
-                    const updatedIdeas = Models.deleteIdea(state, ideaId);
-                    Storage.saveState({
-                        ...state,
-                        ideas: updatedIdeas
-                    });
+                    const updatedState = Models.deleteIdea(state, ideaId);
+                    Storage.saveState(updatedState);
                     Utils.showToast('Idea deleted');
                     renderGardenPage();
                 }

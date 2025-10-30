@@ -298,11 +298,8 @@
                 const logId = btn.getAttribute('data-delete-log');
                 if (confirm('Delete this learning entry? This cannot be undone.')) {
                     const state = Storage.loadState();
-                    const updatedLogs = Models.deleteLog(state, logId);
-                    Storage.saveState({
-                        ...state,
-                        logs: updatedLogs
-                    });
+                    const updatedState = Models.deleteLog(state, logId);
+                    Storage.saveState(updatedState);
                     Utils.showToast('Learning entry deleted');
                     renderFocusPage();
                 }
@@ -315,11 +312,8 @@
                 const winId = btn.getAttribute('data-delete-win');
                 if (confirm('Delete this win? This cannot be undone.')) {
                     const state = Storage.loadState();
-                    const updatedWins = Models.deleteWin(state, winId);
-                    Storage.saveState({
-                        ...state,
-                        wins: updatedWins
-                    });
+                    const updatedState = Models.deleteWin(state, winId);
+                    Storage.saveState(updatedState);
                     Utils.showToast('Win deleted');
                     renderFocusPage();
                 }
