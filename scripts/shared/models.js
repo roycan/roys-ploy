@@ -6,7 +6,6 @@
     // Project CRUD
     function createProject(data) {
         const now = new Date().toISOString();
-        
         return {
             id: global.Utils.generateId(),
             title: data.title || 'Untitled Project',
@@ -22,10 +21,58 @@
             nextStep: data.nextStep || '',
             practiceStrengths: Array.isArray(data.practiceStrengths) ? data.practiceStrengths : [],
             partnerNeeds: Array.isArray(data.partnerNeeds) ? data.partnerNeeds : [],
+            supportPartners: Array.isArray(data.supportPartners) ? data.supportPartners : [], // Up to 3 partners
             lastReviewAt: null,
             createdAt: now,
             updatedAt: now
         };
+    }
+    
+    // Support Partners CRUD (per project)
+    function addSupportPartner(project, partner) {
+        const partners = Array.isArray(project.supportPartners) ? project.supportPartners : [];
+        if (partners.length >= 3) return project; // Enforce max 3
+        if (!partner.name || !partner.name.trim()) return project; // Name required
+        return {
+            ...project,
+            supportPartners: [...partners, {
+                name: partner.name.trim(),
+                contact: partner.contact?.trim() || '',
+                helpsWith: Array.isArray(partner.helpsWith) ? partner.helpsWith : [],
+                notes: partner.notes?.trim() || ''
+            }]
+        };
+    }
+    
+    function updateSupportPartner(project, idx, updates) {
+        const partners = Array.isArray(project.supportPartners) ? project.supportPartners : [];
+        if (idx < 0 || idx >= partners.length) return project;
+        const updated = {
+            ...partners[idx],
+            ...updates,
+            name: (updates.name ?? partners[idx].name).trim(),
+            contact: ((updates.contact ?? partners[idx].contact) || '').trim(),
+            helpsWith: Array.isArray(updates.helpsWith) ? updates.helpsWith : partners[idx].helpsWith,
+            notes: ((updates.notes ?? partners[idx].notes) || '').trim()
+        };
+        const newPartners = partners.slice();
+        newPartners[idx] = updated;
+        return { ...project, supportPartners: newPartners };
+    }
+    
+    function removeSupportPartner(project, idx) {
+        const partners = Array.isArray(project.supportPartners) ? project.supportPartners : [];
+        if (idx < 0 || idx >= partners.length) return project;
+        const newPartners = partners.filter((_, i) => i !== idx);
+        return { ...project, supportPartners: newPartners };
+    }
+    
+    function setSupportPartners(project, partners) {
+        // Overwrite all partners (enforce max 3, name required)
+        const valid = Array.isArray(partners)
+            ? partners.filter(p => p && p.name && p.name.trim()).slice(0, 3)
+            : [];
+        return { ...project, supportPartners: valid };
     }
     
     function updateProject(project, updates) {
@@ -419,6 +466,10 @@
         upsertQuarterlyReflection,
         setCurrentQuarterlyReflection,
         deleteQuarterlyReflection,
-        getCurrentQuarterlyReflection
+        getCurrentQuarterlyReflection,
+        addSupportPartner,
+        updateSupportPartner,
+        removeSupportPartner,
+        setSupportPartners
     };
 })(window);

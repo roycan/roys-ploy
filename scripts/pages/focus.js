@@ -1,3 +1,194 @@
+    // Modal for editing support partners (full implementation)
+    function showEditSupportPartnersModal(project) {
+        const state = Storage.loadState();
+        const supportNeeds = state.settings?.supportNeeds || [];
+        let partners = Array.isArray(project.supportPartners) ? [...project.supportPartners] : [];
+        let editingIdx = null; // null = add, number = edit
+
+        const modal = document.getElementById('modal-root');
+
+        function renderPartnersList() {
+            return `
+                <div style="margin-bottom: 1rem;">
+                    ${partners.length === 0 ? `<span class='has-text-grey is-size-7'>No partners added yet.</span>` : ''}
+                    ${partners.map((p, idx) => `
+                        <div class="card" style="min-width: 180px; max-width: 320px; margin-bottom: 0.5rem; border: 1px solid #dbdbdb; border-radius: 6px; padding: 0.75rem; background: #fafbfc; position: relative;">
+                            <div style="font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem;">${Utils.escapeHtml(p.name)}</div>
+                            ${p.contact ? `<div class="is-size-7 has-text-grey" style="margin-bottom: 0.25rem;"><i class="fas fa-envelope"></i> ${Utils.escapeHtml(p.contact)}</div>` : ''}
+                            ${Array.isArray(p.helpsWith) && p.helpsWith.length > 0 ? `<div class="is-size-7" style="margin-bottom: 0.25rem;"><span class="has-text-grey">Helps with:</span> ${p.helpsWith.map(h => `<span class="tag is-warning is-light">${Utils.escapeHtml(h)}</span>`).join(' ')}</div>` : ''}
+                            ${p.notes ? `<div class="is-size-7 has-text-grey" style="margin-bottom: 0.25rem;">${Utils.escapeHtml(p.notes)}</div>` : ''}
+                            <div style="position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.25rem;">
+                                <button class="button is-small is-info is-light" data-edit-partner="${idx}" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button class="button is-small is-danger is-light" data-remove-partner="${idx}" title="Remove"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderPartnerForm(partner = {}) {
+            return `
+                <form id="partner-form">
+                    <div class="field">
+                        <label class="label is-small">Name <span class="has-text-danger">*</span></label>
+                        <div class="control">
+                            <input class="input is-small" type="text" name="name" value="${Utils.escapeAttr(partner.name || '')}" maxlength="60" required autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label is-small">Contact (email, phone, etc)</label>
+                        <div class="control">
+                            <input class="input is-small" type="text" name="contact" value="${Utils.escapeAttr(partner.contact || '')}" maxlength="100" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label is-small">Helps With (select any)</label>
+                        <div class="tags are-small" id="helps-with-list">
+                            ${supportNeeds.length === 0 ? `<span class='has-text-grey is-size-7'>No support needs defined in <a href='settings.html'>Settings</a>.</span>` :
+                                supportNeeds.map(need => `
+                                    <label class="checkbox" style="margin-right: 0.5rem;">
+                                        <input type="checkbox" name="helpsWith" value="${Utils.escapeAttr(need)}" ${Array.isArray(partner.helpsWith) && partner.helpsWith.includes(need) ? 'checked' : ''}>
+                                        ${Utils.escapeHtml(need)}
+                                    </label>
+                                `).join('')
+                            }
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label is-small">Notes</label>
+                        <div class="control">
+                            <textarea class="textarea is-small" name="notes" maxlength="200" rows="2">${partner.notes ? Utils.escapeHtml(partner.notes) : ''}</textarea>
+                        </div>
+                    </div>
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button class="button is-primary is-small" type="submit" id="save-partner-btn">${editingIdx === null ? 'Add' : 'Save'}</button>
+                        </div>
+                        <div class="control">
+                            <button class="button is-small" type="button" id="cancel-partner-btn">Cancel</button>
+                        </div>
+                    </div>
+                </form>
+            `;
+        }
+
+        function renderModal() {
+            modal.innerHTML = `
+                <div class="modal is-active">
+                    <div class="modal-background"></div>
+                    <div class="modal-card">
+                        <header class="modal-card-head">
+                            <p class="modal-card-title">Support Partners</p>
+                            <button class="delete" aria-label="close"></button>
+                        </header>
+                        <section class="modal-card-body">
+                            <div class="notification is-info is-light">
+                                <p class="is-size-7">Add up to 3 support partners for this project. You can link each to one or more of your support needs.</p>
+                            </div>
+                            <div id="partners-list-section">
+                                ${renderPartnersList()}
+                            </div>
+                            <div id="partner-form-section" style="display: none;"></div>
+                            <button class="button is-link is-small" id="add-partner-btn" style="margin-top: 0.5rem;" ${partners.length >= 3 ? 'disabled' : ''}>
+                                <span class="icon is-small"><i class="fas fa-plus"></i></span>
+                                <span>Add Partner</span>
+                            </button>
+                        </section>
+                        <footer class="modal-card-foot">
+                            <button class="button" id="close-support-partners-btn">Close</button>
+                        </footer>
+                    </div>
+                </div>
+            `;
+
+            // Close modal handlers
+            const closeModal = () => { modal.innerHTML = ''; };
+            document.getElementById('close-support-partners-btn')?.addEventListener('click', closeModal);
+            modal.querySelector('.delete')?.addEventListener('click', closeModal);
+            modal.querySelector('.modal-background')?.addEventListener('click', closeModal);
+
+            // Add partner button
+            document.getElementById('add-partner-btn')?.addEventListener('click', () => {
+                editingIdx = null;
+                showPartnerForm();
+            });
+
+            // Edit partner buttons
+            modal.querySelectorAll('[data-edit-partner]')?.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(btn.getAttribute('data-edit-partner'), 10);
+                    editingIdx = idx;
+                    showPartnerForm(partners[idx]);
+                });
+            });
+
+            // Remove partner buttons
+            modal.querySelectorAll('[data-remove-partner]')?.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(btn.getAttribute('data-remove-partner'), 10);
+                    if (confirm('Remove this partner?')) {
+                        partners.splice(idx, 1);
+                        savePartnersAndRerender();
+                    }
+                });
+            });
+        }
+
+        function showPartnerForm(partner = {}) {
+            // Hide list, show form
+            document.getElementById('partners-list-section').style.display = 'none';
+            const formSection = document.getElementById('partner-form-section');
+            formSection.style.display = '';
+            formSection.innerHTML = renderPartnerForm(partner);
+
+            // Cancel button
+            document.getElementById('cancel-partner-btn').addEventListener('click', () => {
+                formSection.style.display = 'none';
+                document.getElementById('partners-list-section').style.display = '';
+            });
+
+            // Save button
+            document.getElementById('partner-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const name = form.name.value.trim();
+                const contact = form.contact.value.trim();
+                const notes = form.notes.value.trim();
+                const helpsWith = Array.from(form.querySelectorAll('input[name="helpsWith"]:checked')).map(cb => cb.value);
+                if (!name) {
+                    alert('Name is required.');
+                    return;
+                }
+                const partnerObj = { name, contact, helpsWith, notes };
+                if (editingIdx === null) {
+                    if (partners.length >= 3) {
+                        alert('You can only add up to 3 partners.');
+                        return;
+                    }
+                    partners.push(partnerObj);
+                } else {
+                    partners[editingIdx] = partnerObj;
+                }
+                savePartnersAndRerender();
+            });
+        }
+
+        function savePartnersAndRerender() {
+            // Save to project and storage
+            const state = Storage.loadState();
+            const updatedProject = Models.setSupportPartners(project, partners);
+            Storage.saveState({
+                ...state,
+                projects: state.projects.map(p => p.id === project.id ? updatedProject : p)
+            });
+            Utils.showToast('Support partners updated!');
+            renderModal();
+            renderFocusPage(); // update main page
+        }
+
+        renderModal();
+    }
 // Focus page logic for Roy's Ploy (CommonJS/IIFE pattern)
 // Depends on: Utils, Storage, Models, ExportModule
 (function() {
@@ -34,43 +225,73 @@
     function renderStrengthsAndPartnerSection(project, state) {
         const practiceStrengths = Array.isArray(project.practiceStrengths) ? project.practiceStrengths : [];
         const partnerNeeds = Array.isArray(project.partnerNeeds) ? project.partnerNeeds : [];
-        const hasData = practiceStrengths.length > 0 || partnerNeeds.length > 0;
-        
+        const supportPartners = Array.isArray(project.supportPartners) ? project.supportPartners : [];
+        const hasData = practiceStrengths.length > 0 || partnerNeeds.length > 0 || supportPartners.length > 0;
+
+        // Section for strengths/needs
+        let html = '';
         if (!hasData) {
-            return `
+            html += `
                 <div class="box" style="margin-bottom: 1rem; padding: 0.75rem;">
                     <p class="is-size-7 has-text-grey">
-                        Want to practice specific strengths or collaborate? 
+                        Want to practice specific strengths, collaborate, or add support partners?
                         <a id="edit-strengths-partner-link" style="cursor: pointer; text-decoration: underline;">Add them here</a>.
                     </p>
                 </div>
             `;
-        }
-        
-        return `
-            <div class="box" style="margin-bottom: 1rem; padding: 0.75rem;">
-                ${practiceStrengths.length > 0 ? `
+        } else {
+            html += `<div class="box" style="margin-bottom: 1rem; padding: 0.75rem;">`;
+            if (practiceStrengths.length > 0) {
+                html += `
                     <div style="margin-bottom: 0.5rem;">
                         <label class="label is-size-7" style="margin-bottom: 0.25rem;">Practice Strengths:</label>
                         <div class="tags are-small" style="margin-bottom: 0;">
                             ${practiceStrengths.map(s => `<span class="tag is-info is-light">${Utils.escapeHtml(s)}</span>`).join('')}
                         </div>
                     </div>
-                ` : ''}
-                ${partnerNeeds.length > 0 ? `
+                `;
+            }
+            if (partnerNeeds.length > 0) {
+                html += `
                     <div>
                         <label class="label is-size-7" style="margin-bottom: 0.25rem;">Partner Needs:</label>
                         <div class="tags are-small" style="margin-bottom: 0;">
                             ${partnerNeeds.map(s => `<span class="tag is-warning is-light">${Utils.escapeHtml(s)}</span>`).join('')}
                         </div>
                     </div>
-                ` : ''}
-                <button class="button is-text is-small" id="edit-strengths-partner-btn" style="margin-top: 0.25rem;">
-                    <span class="icon is-small"><i class="fas fa-edit"></i></span>
-                    <span>Edit</span>
+                `;
+            }
+            html += `<button class="button is-text is-small" id="edit-strengths-partner-btn" style="margin-top: 0.25rem;">
+                <span class="icon is-small"><i class="fas fa-edit"></i></span>
+                <span>Edit</span>
+            </button>`;
+            html += `</div>`;
+        }
+
+        // Section for support partners
+        html += `<div class="box" style="margin-bottom: 1rem; padding: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <label class="label is-size-7" style="margin-bottom: 0;">Support Partners</label>
+                <button class="button is-text is-small" id="edit-support-partners-btn">
+                    <span class="icon is-small"><i class="fas fa-user-friends"></i></span>
+                    <span>${supportPartners.length > 0 ? 'Edit' : 'Add'}</span>
                 </button>
             </div>
-        `;
+            <div id="support-partners-list" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                ${supportPartners.length === 0 ? `<span class="has-text-grey is-size-7">No partners added yet.</span>` :
+                    supportPartners.map((p, idx) => `
+                        <div class="card" style="min-width: 180px; max-width: 240px; margin-bottom: 0.5rem; border: 1px solid #dbdbdb; border-radius: 6px; padding: 0.75rem; background: #fafbfc; position: relative;">
+                            <div style="font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem;">${Utils.escapeHtml(p.name)}</div>
+                            ${p.contact ? `<div class="is-size-7 has-text-grey" style="margin-bottom: 0.25rem;"><i class="fas fa-envelope"></i> ${Utils.escapeHtml(p.contact)}</div>` : ''}
+                            ${Array.isArray(p.helpsWith) && p.helpsWith.length > 0 ? `<div class="is-size-7" style="margin-bottom: 0.25rem;"><span class="has-text-grey">Helps with:</span> ${p.helpsWith.map(h => `<span class="tag is-warning is-light">${Utils.escapeHtml(h)}</span>`).join(' ')}</div>` : ''}
+                            ${p.notes ? `<div class="is-size-7 has-text-grey" style="margin-bottom: 0.25rem;">${Utils.escapeHtml(p.notes)}</div>` : ''}
+                        </div>
+                    `).join('')
+                }
+            </div>
+        </div>`;
+
+        return html;
     }
     
     function renderFocusPage() {
@@ -282,6 +503,14 @@
         if (editBtn) {
             editBtn.addEventListener('click', () => {
                 showEditStrengthsPartnerModal(project);
+            });
+        }
+
+        // Edit/Add support partners
+        const editPartnersBtn = document.getElementById('edit-support-partners-btn');
+        if (editPartnersBtn) {
+            editPartnersBtn.addEventListener('click', () => {
+                showEditSupportPartnersModal(project);
             });
         }
         
