@@ -20,6 +20,8 @@
                 timeUTC: data.cadenceTimeUTC || '20:00'
             },
             nextStep: data.nextStep || '',
+            practiceStrengths: Array.isArray(data.practiceStrengths) ? data.practiceStrengths : [],
+            partnerNeeds: Array.isArray(data.partnerNeeds) ? data.partnerNeeds : [],
             lastReviewAt: null,
             createdAt: now,
             updatedAt: now
@@ -327,6 +329,52 @@
             totalWins: state.wins.length
         };
     }
+
+    // Quarterly Reflections
+    function createQuarterlyReflection(data) {
+        const now = new Date().toISOString();
+        return {
+            id: global.Utils.generateId(),
+            quarterLabel: data.quarterLabel || '', // e.g., "Q4 2025"
+            goals: data.goals || '',
+            successDefinition: data.successDefinition || '',
+            risks: data.risks || '',
+            supportPlan: data.supportPlan || '',
+            isCurrent: !!data.isCurrent,
+            createdAt: now,
+            updatedAt: now
+        };
+    }
+    function upsertQuarterlyReflection(state, item) {
+        const list = Array.isArray(state.quarterlyReflections) ? state.quarterlyReflections : [];
+        const idx = list.findIndex(r => r.id === item.id);
+        const updatedItem = { ...item, updatedAt: new Date().toISOString() };
+        let updatedList;
+        if (idx === -1) {
+            updatedList = [...list, updatedItem];
+        } else {
+            updatedList = list.slice();
+            updatedList[idx] = updatedItem;
+        }
+        return { ...state, quarterlyReflections: updatedList };
+    }
+    function setCurrentQuarterlyReflection(state, id) {
+        const list = Array.isArray(state.quarterlyReflections) ? state.quarterlyReflections : [];
+        const updatedList = list.map(r => ({
+            ...r,
+            isCurrent: r.id === id,
+            updatedAt: new Date().toISOString()
+        }));
+        return { ...state, quarterlyReflections: updatedList };
+    }
+    function deleteQuarterlyReflection(state, id) {
+        const list = Array.isArray(state.quarterlyReflections) ? state.quarterlyReflections : [];
+        return { ...state, quarterlyReflections: list.filter(r => r.id !== id) };
+    }
+    function getCurrentQuarterlyReflection(state) {
+        const list = Array.isArray(state.quarterlyReflections) ? state.quarterlyReflections : [];
+        return list.find(r => r.isCurrent) || null;
+    }
     
     // Export to global scope
     global.Models = {
@@ -366,6 +414,11 @@
         recordBackup,
         shouldShowBackupReminder,
         getProjectStats,
-        getOverallStats
+        getOverallStats,
+        createQuarterlyReflection,
+        upsertQuarterlyReflection,
+        setCurrentQuarterlyReflection,
+        deleteQuarterlyReflection,
+        getCurrentQuarterlyReflection
     };
 })(window);

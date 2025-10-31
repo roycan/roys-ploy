@@ -28,12 +28,16 @@
             ideas: [],
             logs: [],
             wins: [],
+            quarterlyReflections: [],
             settings: {
                 defaultReviewDay: 0, // Sunday
                 defaultReviewTimeUTC: '20:00',
                 lastBackupAt: null,
                 backupReminderDays: 14,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                strengths: [],
+                supportNeeds: [],
+                accountability: { name: '', contact: '' }
             }
         };
     }
@@ -243,6 +247,15 @@
             'id',
             strategy
         );
+        
+        // Merge quarterly reflections (by id)
+        if (Array.isArray(current.quarterlyReflections) || Array.isArray(imported.quarterlyReflections)) {
+            const cur = Array.isArray(current.quarterlyReflections) ? current.quarterlyReflections : [];
+            const imp = Array.isArray(imported.quarterlyReflections) ? imported.quarterlyReflections : [];
+            result.quarterlyReflections = mergeArrays(cur, imp, 'id', strategy);
+        } else {
+            result.quarterlyReflections = [];
+        }
         
         // Settings: prefer imported if different
         result.settings = {

@@ -59,6 +59,10 @@
                     ${renderFilters()}
                 </div>
                 
+                <p class="is-size-7 has-text-grey" style="text-align: center; margin-bottom: 1rem;">
+                    <a id="view-quarterly-prompts-link" style="cursor: pointer; text-decoration: underline;">View quarterly plan</a> to reflect on your goals.
+                </p>
+                
                 <div id="projects-container">
                     ${renderProjects(state)}
                 </div>
@@ -238,6 +242,14 @@
     }
     
     function attachHandlers() {
+        // Quarterly prompts link
+        const quarterlyLink = document.getElementById('view-quarterly-prompts-link');
+        if (quarterlyLink) {
+            quarterlyLink.addEventListener('click', () => {
+                PromptsModule.showPromptsListModal();
+            });
+        }
+        
         // FAB click handler
         const fab = document.getElementById('fab');
         if (fab) {

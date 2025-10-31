@@ -71,6 +71,11 @@
                     </div>
                 </div>
                 
+                <!-- Quarterly Prompts Access -->
+                <p class="is-size-7 has-text-grey" style="text-align: center; margin-bottom: 1rem;">
+                    <a id="view-quarterly-prompts-link" style="cursor: pointer; text-decoration: underline;">View quarterly plan</a> for reflection.
+                </p>
+                
                 <!-- Weekly Review Card -->
                 ${projectsNeedingReview.length > 0 ? `
                     <div class="notification is-info is-light" style="margin-bottom: 1.5rem;">
@@ -161,6 +166,14 @@
     }
     
     function attachHandlers() {
+        // Quarterly prompts link
+        const quarterlyLink = document.getElementById('view-quarterly-prompts-link');
+        if (quarterlyLink) {
+            quarterlyLink.addEventListener('click', () => {
+                PromptsModule.showPromptsListModal();
+            });
+        }
+        
         // Project filter
         const filter = document.getElementById('project-filter');
         if (filter) {

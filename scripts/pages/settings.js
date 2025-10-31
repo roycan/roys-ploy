@@ -28,6 +28,9 @@
         const stats = Storage.getStorageStats();
         const reviewCadence = state.settings?.reviewCadenceDays || 7;
         const backupReminder = state.settings?.backupReminderDays || 30;
+        const strengths = state.settings?.strengths || [];
+        const supportNeeds = state.settings?.supportNeeds || [];
+        const accountability = state.settings?.accountability || { name: '', contact: '' };
         
         document.getElementById('app').innerHTML = `
             <div class="container" style="padding: 1rem 1rem 5rem 1rem;">
@@ -154,6 +157,76 @@
                     </div>
                     
                     <button class="button is-primary is-small" id="save-preferences-btn">Save Preferences</button>
+                </div>
+
+                <!-- Strengths & Support -->
+                <div class="box" style="margin-bottom: 1.5rem;">
+                    <h2 class="subtitle is-5">Strengths & Support</h2>
+                    <div class="columns is-variable is-2">
+                        <div class="column">
+                            <label class="label is-small">Your Strengths (up to 10)</label>
+                            <div class="field has-addons">
+                                <div class="control is-expanded">
+                                    <input class="input is-small" id="strength-input" type="text" placeholder="Add a strength (e.g., Systems thinking)">
+                                </div>
+                                <div class="control">
+                                    <button class="button is-small is-primary" id="add-strength-btn">
+                                        <span class="icon"><i class="fas fa-plus"></i></span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="strengths-list" class="tags" style="flex-wrap: wrap;">
+                                ${strengths.map((s, i) => `
+                                    <span class="tag is-info is-light" data-strength-index="${i}">
+                                        ${Utils.escapeHtml(s)}
+                                        <button class="delete is-small" title="Remove" data-remove-strength="${i}"></button>
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="column">
+                            <label class="label is-small">Support Needs (up to 10)</label>
+                            <div class="field has-addons">
+                                <div class="control is-expanded">
+                                    <input class="input is-small" id="support-input" type="text" placeholder="Add a support need (e.g., Accountability)">
+                                </div>
+                                <div class="control">
+                                    <button class="button is-small is-primary" id="add-support-btn">
+                                        <span class="icon"><i class="fas fa-plus"></i></span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="support-list" class="tags" style="flex-wrap: wrap;">
+                                ${supportNeeds.map((s, i) => `
+                                    <span class="tag is-warning is-light" data-support-index="${i}">
+                                        ${Utils.escapeHtml(s)}
+                                        <button class="delete is-small" title="Remove" data-remove-support="${i}"></button>
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="columns is-variable is-2 is-multiline">
+                        <div class="column is-half">
+                            <label class="label is-small">Accountability Partner</label>
+                            <div class="field">
+                                <div class="control">
+                                    <input class="input is-small" id="accountability-name" type="text" placeholder="Name" value="${Utils.escapeHtml(accountability.name || '')}">
+                                </div>
+                            </div>
+                            <div class="field">
+                                <div class="control">
+                                    <input class="input is-small" id="accountability-contact" type="text" placeholder="Contact (optional)" value="${Utils.escapeHtml(accountability.contact || '')}">
+                                </div>
+                                <p class="help">Email, phone, or any contact note you find useful.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="buttons">
+                        <button class="button is-small is-primary" id="save-strengths-support-btn">Save</button>
+                    </div>
                 </div>
                 
                 <!-- Danger Zone -->
@@ -363,6 +436,71 @@
             Storage.saveState(updatedState);
             Utils.showToast('Preferences saved!');
         });
+
+        // Strengths & Support handlers
+        document.getElementById('add-strength-btn')?.addEventListener('click', () => {
+            const input = document.getElementById('strength-input');
+            const value = input.value.trim();
+            const list = state.settings.strengths || [];
+            if (!value) return;
+            if (list.includes(value)) {
+                Utils.showToast('Already added', 'warning');
+                return;
+            }
+            if (list.length >= 10) {
+                Utils.showToast('Limit reached (10 strengths)', 'warning');
+                return;
+            }
+            const updated = Models.updateSettings(state, { strengths: [...list, value] });
+            Storage.saveState(updated);
+            renderSettingsPage();
+        });
+        document.getElementById('add-support-btn')?.addEventListener('click', () => {
+            const input = document.getElementById('support-input');
+            const value = input.value.trim();
+            const list = state.settings.supportNeeds || [];
+            if (!value) return;
+            if (list.includes(value)) {
+                Utils.showToast('Already added', 'warning');
+                return;
+            }
+            if (list.length >= 10) {
+                Utils.showToast('Limit reached (10 support needs)', 'warning');
+                return;
+            }
+            const updated = Models.updateSettings(state, { supportNeeds: [...list, value] });
+            Storage.saveState(updated);
+            renderSettingsPage();
+        });
+        // Remove strength/support via event delegation
+        document.getElementById('strengths-list')?.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-remove-strength]');
+            if (!btn) return;
+            const idx = parseInt(btn.getAttribute('data-remove-strength'), 10);
+            const list = state.settings.strengths || [];
+            const updatedList = list.filter((_, i) => i !== idx);
+            const updated = Models.updateSettings(state, { strengths: updatedList });
+            Storage.saveState(updated);
+            renderSettingsPage();
+        });
+        document.getElementById('support-list')?.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-remove-support]');
+            if (!btn) return;
+            const idx = parseInt(btn.getAttribute('data-remove-support'), 10);
+            const list = state.settings.supportNeeds || [];
+            const updatedList = list.filter((_, i) => i !== idx);
+            const updated = Models.updateSettings(state, { supportNeeds: updatedList });
+            Storage.saveState(updated);
+            renderSettingsPage();
+        });
+
+        document.getElementById('save-strengths-support-btn')?.addEventListener('click', () => {
+            const name = document.getElementById('accountability-name').value.trim();
+            const contact = document.getElementById('accountability-contact').value.trim();
+            const updated = Models.updateSettings(state, { accountability: { name, contact } });
+            Storage.saveState(updated);
+            Utils.showToast('Saved strengths, support, and accountability');
+        });
         
         // Clear all data
         document.getElementById('clear-all-data-btn')?.addEventListener('click', () => {
@@ -380,9 +518,8 @@
     }
     
     function showImportPreviewModal(importData) {
-        const state = Storage.loadState();
-        const preview = Storage.getImportPreview(state, importData);
-        const summary = Storage.getImportSummary(preview);
+        const preview = importData.preview;
+        const summary = ImportModule.getImportSummary(preview);
         
         const modal = document.getElementById('modal-root');
         modal.innerHTML = `
@@ -394,17 +531,10 @@
                         <button class="delete" aria-label="close"></button>
                     </header>
                     <section class="modal-card-body">
-                        <div class="notification is-info is-light">
-                            <p class="is-size-7"><strong>Summary:</strong></p>
-                            <p class="is-size-7">${summary}</p>
+                        <div class="notification is-${summary.type === 'error' ? 'danger' : summary.type === 'warning' ? 'warning' : 'info'} is-light">
+                            <p class="is-size-7"><strong>${summary.title}</strong></p>
+                            <p class="is-size-7" style="white-space: pre-line;">${summary.message}</p>
                         </div>
-                        
-                        ${preview.conflicts.length > 0 ? `
-                            <div class="notification is-warning is-light">
-                                <p class="is-size-7"><strong>Conflicts detected:</strong> ${preview.conflicts.length} item(s) exist in both backups.</p>
-                                <p class="is-size-7">Choose a merge strategy:</p>
-                            </div>
-                        ` : ''}
                         
                         <form id="import-form">
                             <div class="field">
@@ -443,10 +573,15 @@
             const mergeStrategy = document.querySelector('input[name="mergeStrategy"]:checked').value;
             
             try {
-                ImportModule.executeImport(importData, { mergeStrategy });
-                closeModal();
-                Utils.showToast('Import successful!');
-                renderSettingsPage();
+                const result = ImportModule.executeImport(importData.jsonString, mergeStrategy);
+                if (result.success) {
+                    Storage.saveState(result.data);
+                    closeModal();
+                    Utils.showToast('Import successful!');
+                    renderSettingsPage();
+                } else {
+                    alert('Import failed: ' + result.error);
+                }
             } catch (error) {
                 alert('Import failed: ' + error.message);
             }

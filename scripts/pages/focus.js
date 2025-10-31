@@ -31,6 +31,48 @@
         }
     }
     
+    function renderStrengthsAndPartnerSection(project, state) {
+        const practiceStrengths = Array.isArray(project.practiceStrengths) ? project.practiceStrengths : [];
+        const partnerNeeds = Array.isArray(project.partnerNeeds) ? project.partnerNeeds : [];
+        const hasData = practiceStrengths.length > 0 || partnerNeeds.length > 0;
+        
+        if (!hasData) {
+            return `
+                <div class="box" style="margin-bottom: 1rem; padding: 0.75rem;">
+                    <p class="is-size-7 has-text-grey">
+                        Want to practice specific strengths or collaborate? 
+                        <a id="edit-strengths-partner-link" style="cursor: pointer; text-decoration: underline;">Add them here</a>.
+                    </p>
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="box" style="margin-bottom: 1rem; padding: 0.75rem;">
+                ${practiceStrengths.length > 0 ? `
+                    <div style="margin-bottom: 0.5rem;">
+                        <label class="label is-size-7" style="margin-bottom: 0.25rem;">Practice Strengths:</label>
+                        <div class="tags are-small" style="margin-bottom: 0;">
+                            ${practiceStrengths.map(s => `<span class="tag is-info is-light">${Utils.escapeHtml(s)}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                ${partnerNeeds.length > 0 ? `
+                    <div>
+                        <label class="label is-size-7" style="margin-bottom: 0.25rem;">Partner Needs:</label>
+                        <div class="tags are-small" style="margin-bottom: 0;">
+                            ${partnerNeeds.map(s => `<span class="tag is-warning is-light">${Utils.escapeHtml(s)}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                <button class="button is-text is-small" id="edit-strengths-partner-btn" style="margin-top: 0.25rem;">
+                    <span class="icon is-small"><i class="fas fa-edit"></i></span>
+                    <span>Edit</span>
+                </button>
+            </div>
+        `;
+    }
+    
     function renderFocusPage() {
         const state = Storage.loadState();
         const project = Models.getProjectById(state, currentProjectId);
@@ -108,6 +150,9 @@
                     ` : ''}
                 </div>
                 
+                <!-- Strengths & Partner Needs -->
+                ${renderStrengthsAndPartnerSection(project, state)}
+                
                 <!-- Action Buttons -->
                 <div class="buttons" style="margin-bottom: 1.5rem; flex-wrap: wrap;">
                     <button class="button is-primary is-small" id="add-learning-btn">
@@ -138,6 +183,11 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Quarterly Prompts Access -->
+                <p class="is-size-7 has-text-grey" style="text-align: center; margin-bottom: 1rem;">
+                    <a id="view-quarterly-prompts-link" style="cursor: pointer; text-decoration: underline;">View quarterly plan</a> for context and motivation.
+                </p>
                 
                 <!-- Tabs -->
                 <div class="tabs">
@@ -213,6 +263,28 @@
     }
     
     function attachHandlers(project) {
+        // Quarterly prompts link
+        const quarterlyLink = document.getElementById('view-quarterly-prompts-link');
+        if (quarterlyLink) {
+            quarterlyLink.addEventListener('click', () => {
+                PromptsModule.showPromptsListModal();
+            });
+        }
+        
+        // Edit strengths & partner needs
+        const editLink = document.getElementById('edit-strengths-partner-link');
+        const editBtn = document.getElementById('edit-strengths-partner-btn');
+        if (editLink) {
+            editLink.addEventListener('click', () => {
+                showEditStrengthsPartnerModal(project);
+            });
+        }
+        if (editBtn) {
+            editBtn.addEventListener('click', () => {
+                showEditStrengthsPartnerModal(project);
+            });
+        }
+        
         // Next step auto-save on blur
         const nextStepInput = document.getElementById('next-step-input');
         if (nextStepInput) {
@@ -319,6 +391,101 @@
                 }
             });
         });
+    }
+    
+    function showEditStrengthsPartnerModal(project) {
+        const state = Storage.loadState();
+        const globalStrengths = state.settings?.strengths || [];
+        const globalPartner = state.settings?.supportNeeds || [];
+        const currentPractice = Array.isArray(project.practiceStrengths) ? project.practiceStrengths : [];
+        const currentPartner = Array.isArray(project.partnerNeeds) ? project.partnerNeeds : [];
+        
+        const modal = document.getElementById('modal-root');
+        modal.innerHTML = `
+            <div class="modal is-active">
+                <div class="modal-background"></div>
+                <div class="modal-card">
+                    <header class="modal-card-head">
+                        <p class="modal-card-title">Strengths & Partner Needs</p>
+                        <button class="delete" aria-label="close"></button>
+                    </header>
+                    <section class="modal-card-body">
+                        <div class="notification is-info is-light">
+                            <p class="is-size-7">Select up to 3 strengths you want to practice and up to 3 needs for a partner.</p>
+                            ${globalStrengths.length === 0 && globalPartner.length === 0 ? `
+                                <p class="is-size-7" style="margin-top: 0.5rem;">
+                                    <a href="settings.html">Go to Settings</a> to define your strengths and support needs first.
+                                </p>
+                            ` : ''}
+                        </div>
+                        
+                        ${globalStrengths.length > 0 ? `
+                            <div class="field">
+                                <label class="label is-small">Practice Strengths (select up to 3)</label>
+                                <div id="practice-strengths-list">
+                                    ${globalStrengths.map(s => `
+                                        <label class="checkbox is-block">
+                                            <input type="checkbox" name="practice-strength" value="${Utils.escapeHtml(s)}" ${currentPractice.includes(s) ? 'checked' : ''}>
+                                            ${Utils.escapeHtml(s)}
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${globalPartner.length > 0 ? `
+                            <div class="field">
+                                <label class="label is-small">Partner Needs (select up to 3)</label>
+                                <div id="partner-needs-list">
+                                    ${globalPartner.map(s => `
+                                        <label class="checkbox is-block">
+                                            <input type="checkbox" name="partner-need" value="${Utils.escapeHtml(s)}" ${currentPartner.includes(s) ? 'checked' : ''}>
+                                            ${Utils.escapeHtml(s)}
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </section>
+                    <footer class="modal-card-foot">
+                        <button class="button is-primary" id="save-strengths-partner-btn">Save</button>
+                        <button class="button" id="cancel-strengths-partner-btn">Cancel</button>
+                    </footer>
+                </div>
+            </div>
+        `;
+        
+        const closeModal = () => {
+            modal.innerHTML = '';
+        };
+        
+        document.getElementById('save-strengths-partner-btn')?.addEventListener('click', () => {
+            const practiceChecked = Array.from(document.querySelectorAll('input[name="practice-strength"]:checked')).map(cb => cb.value);
+            const partnerChecked = Array.from(document.querySelectorAll('input[name="partner-need"]:checked')).map(cb => cb.value);
+            
+            if (practiceChecked.length > 3) {
+                alert('Please select up to 3 practice strengths.');
+                return;
+            }
+            if (partnerChecked.length > 3) {
+                alert('Please select up to 3 partner needs.');
+                return;
+            }
+            
+            const updatedProject = Models.updateProject(project, { practiceStrengths: practiceChecked, partnerNeeds: partnerChecked });
+            const state = Storage.loadState();
+            Storage.saveState({
+                ...state,
+                projects: state.projects.map(p => p.id === project.id ? updatedProject : p)
+            });
+            Utils.showToast('Strengths and partner needs updated!');
+            closeModal();
+            renderFocusPage();
+        });
+        
+        document.getElementById('cancel-strengths-partner-btn')?.addEventListener('click', closeModal);
+        modal.querySelector('.delete')?.addEventListener('click', closeModal);
+        modal.querySelector('.modal-background')?.addEventListener('click', closeModal);
     }
     
     function showAddLearningModal(project) {
